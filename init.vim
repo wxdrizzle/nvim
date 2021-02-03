@@ -140,7 +140,7 @@ noremap <silent> <LEADER><LEADER>f za
 " ===
 noremap <silent> J 5j
 noremap <silent> K 5k
-" noremap <silent> H ^
+noremap <silent> H ^
 noremap <silent> L $
 noremap W 5w
 noremap B 5b
@@ -532,7 +532,6 @@ let g:indentLine_defaultGroup = 'SpecialKey'
 
 
 
-nnoremap H I
 
 
 
