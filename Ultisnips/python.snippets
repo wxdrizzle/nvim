@@ -1,0 +1,92 @@
+snippet #!
+#!/usr/bin/env python3
+
+${0}
+endsnippet
+
+snippet aut
+"""
+Author: Xin Wang
+Description: ${0}
+"""
+endsnippet
+
+snippet ifn 
+if __name__ == "__main__":
+	main()
+${0}
+endsnippet
+
+snippet defm
+def main():
+	${1:pass}
+${0}
+endsnippet
+
+snippet imp
+import ${0:module}
+endsnippet
+
+snippet fro
+from ${1:package} import ${0:module}
+endsnippet
+
+snippet wh
+while ${1:condition}:
+	${0:${VISUAL:pass}}	
+endsnippet
+
+snippet sup
+super().__init__(${0})
+endsnippet
+
+snippet cl
+class ${1:ClassName}(${2:object}):
+	def __init__(self, ${333:arg}):
+		${0}
+endsnippet
+
+snippet def
+def ${1:fname}(${2:`indent('.') ? 'self' : ''`}):
+	${0}
+endsnippet
+
+snippet if
+if ${1:condition}:
+	${0:${VISUAL:pass}}
+endsnippet
+
+snippet el
+else:
+	${0:${VISUAL:pass}}
+endsnippet
+
+snippet ei
+elif ${1:condition}:
+	${0:${VISUAL:pass}}
+endsnippet
+
+snippet fo
+for ${1:item} in ${2:items}:
+	${0}
+endsnippet
+
+snippet ld
+${1:var} = lambda ${2:vars} : ${0:action}
+endsnippet
+
+snippet ret
+return ${0}
+endsnippet
+
+snippet sl
+self.
+endsnippet
+
+
+
+
+
+
+
+

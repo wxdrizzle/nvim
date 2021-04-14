@@ -1,3 +1,74 @@
 {
+    // builtin configs
 	"coc.preferences.extensionUpdateCheck": "weekly",
+    "coc.preferences.formatOnSaveFiletypes": ["python"],
+    // "diagnostic.displayByAle": true,
+    "suggest.completionItemKindLabels": {
+		"class"         : "",
+		"color"         : "",
+		"constant"      : "",
+		"default"       : "",
+		"enum"          : "",
+		"enumMember"    : "",
+		"event"         : "ﳅ",
+		"field"         : "ﴲ",
+		"file"          : "",
+		"folder"        : "",
+		"function"      : "",
+		"interface"     : "",
+		"keyword"       : "",
+		"method"        : "",
+		"module"        : "全",
+		"operator"      : "",
+		"property"      : "",
+		"reference"     : "",
+		"snippet"       : "",
+		"struct"        : "פּ",
+		"text"          : "",
+		"typeParameter" : "",
+		"unit"          : "",
+		"value"         : "",
+		"variable"      : ""
+	},
+    "diagnostic.errorSign": "",
+    "diagnostic.warningSign": "",
+    "diagnostic.infoSign": "",
+    "diagnostic.hintSign": "",
+    "diagnostic.refreshOnInsertMode": false,
+    "diagnostic.checkCurrentLine": true,
+    "diagnostic.format": "[%severity]%code: %message [%source]",
+    "codeLens.enable": true,
+
+    // coc-explorer
+    "explorer.width": 30,
+    "explorer.file.showHiddenFiles": true,
+	"explorer.icon.enableNerdfont": true,
+    "explorer.sources": [
+        {
+            "name": "bookmark",
+            "expand": false
+        },
+        {
+            "name": "buffer",
+            "expand": false
+        },
+        {
+            "name": "file",
+            "expand": true
+        }
+    ],
+    "explorer.file.column.indent.indentLine": true,
+
+    // coc-pyright
+    "python.formatting.provider": "yapf",
+    "python.formatting.yapfArgs": [
+        "--style",
+        "{spaces_before_comment: 1, column_limit: 120}"
+    ],
+
+    // snippets
+    "snippets.ultisnips.directories": [
+        "~/.config/nvim/UltiSnips"
+    ]
+
 }
