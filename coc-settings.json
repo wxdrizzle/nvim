@@ -41,7 +41,7 @@
 
     // coc-explorer
     "explorer.width": 30,
-    "explorer.file.showHiddenFiles": true,
+    "explorer.file.showHiddenFiles": false,
 	"explorer.icon.enableNerdfont": true,
     "explorer.sources": [
         {
@@ -58,6 +58,10 @@
         }
     ],
     "explorer.file.column.indent.indentLine": true,
+    "explorer.file.hiddenRules": {
+        "extensions": [".git", "idea", "vim", "pytest_cache", "DS_Store", "vimspector.json"],
+        "filenames": ["__pycache__", "pyrightconfig", "LICENSE"]
+    },
 
     // coc-pyright
     "python.formatting.provider": "yapf",
