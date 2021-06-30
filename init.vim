@@ -37,7 +37,7 @@ set exrc
 set secure
 set hidden
 set cursorline
-set colorcolumn=110
+set colorcolumn=120
 set wrap
 autocmd BufRead *.py set nowrap
 set showcmd
@@ -230,7 +230,7 @@ hi Normal guibg=#1e2430
   " set winhighlight=Normal:ActiveWindow,NormalNC:InactiveWindow,SignColumn:ActiveWindow
   set cursorline
   if &filetype == "python"
-    setlocal colorcolumn=110
+    setlocal colorcolumn=120
   else
     setlocal colorcolumn=""
   endif
@@ -244,7 +244,7 @@ hi Normal guibg=#1e2430
   set nocursorline
   setlocal colorcolumn=""
 endfunction
-autocmd BufRead *.py setlocal colorcolumn=110
+autocmd BufRead *.py setlocal colorcolumn=120
 
 " ===
 " === Tab management
@@ -327,6 +327,37 @@ func! CompileRunGcc()
 	" 	:sp
 	" 	:term go run .
 	endif
+endfunc
+
+"auto upload file to server
+command! -nargs=1 StartAsync
+         \ call jobstart(<f-args>, {
+         \    'on_exit': { j,d,e ->
+         \       execute('echom "command finished with exit status '.d.'"', '')
+         \    }
+         \ })
+
+autocmd BufWritePost *.py,*.sh call AutoUploading()
+func! AutoUploading()
+    if exists('g:ssh_usr')
+        let $ssh_usr_name=g:ssh_usr
+        let $ssh_ip_address=g:ssh_ip
+        let $path_local_file=expand('%:p')
+        if g:remote_os == "linux"
+            let $path_in_projects=join(split($path_local_file, "/")[3:], "/")
+            let $path_remote_dir=g:remote_dir . join(split(expand('%:p:h'), "/")[3:], "/")
+        endif
+        if g:remote_os == "win"
+            let $path_in_projects=join(split($path_local_file, "/")[3:], "\\")
+            let $path_remote_dir=g:remote_dir . join(split(expand('%:p:h'), "/")[3:], "\\")
+        endif
+
+        let $path_remote_file=g:remote_dir . $path_in_projects
+        let $project_name=split(expand('%:p'), "/")[3]
+
+        :StartAsync ssh $ssh_usr_name@$ssh_ip_address mkdir -p $path_remote_dir
+        :StartAsync scp $path_local_file $ssh_usr_name@$ssh_ip_address:$path_remote_file
+    endif
 endfunc
 
 
@@ -476,6 +507,9 @@ Plug 'instant-markdown/vim-instant-markdown'
 
 " Auto Complete
 Plug 'neoclide/coc.nvim', {'branch': 'release'}
+
+" auto sync
+Plug 'kenn7/vim-arsync'
 
 
 call plug#end()
