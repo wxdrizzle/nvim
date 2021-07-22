@@ -87,7 +87,7 @@ endif
 
 au BufReadPost * if line("'\"") > 1 && line("'\"") <= line("$") | exe "normal! g'\"" | endif
 
-autocmd BufLeave *
+autocmd BufLeave *Error detected while processing BufLeave
     \ if &buftype ==# '' || &buftype == 'acwrite' |
     \     silent write |
     \ endif
@@ -115,12 +115,12 @@ let mapleader=" "
 noremap ; :
 
 " Save & quit
-noremap Q :q<CR>
+noremap <silent> Q :q<CR>
 noremap <C-q> :qa<CR>
 noremap S :w<CR>
 
 " Open the vimrc file anytime
-noremap <LEADER>rc :e ~/.config/nvim/init.vim<CR>
+noremap <silent> <LEADER>rc :e ~/.config/nvim/init.vim<CR>
 
 " Refresh Nvim Settings
 noremap R :w<CR>:source $MYVIMRC<CR>
@@ -193,16 +193,16 @@ noremap qe <C-w>o
 noremap s <nop>
 
 " split the screens to up (horizontal), down (horizontal), left (vertical), right (vertical)
-noremap sk :set nosplitbelow<CR>:split<CR>:set splitbelow<CR>
-noremap sj :set splitbelow<CR>:split<CR>
-noremap sh :set nosplitright<CR>:vsplit<CR>:set splitright<CR>
-noremap sl :set splitright<CR>:vsplit<CR>
+noremap <silent> sk :set nosplitbelow<CR>:split<CR>:set splitbelow<CR>
+noremap <silent> sj :set splitbelow<CR>:split<CR>
+noremap <silent> sh :set nosplitright<CR>:vsplit<CR>:set splitright<CR>
+noremap <silent> sl :set splitright<CR>:vsplit<CR>
 
 " Resize splits with arrow keys
-noremap <up> :res +5<CR>
-noremap <down> :res -5<CR>
-noremap <left> :vertical resize-5<CR>
-noremap <right> :vertical resize+5<CR>
+noremap <silent> <up> :res +5<CR>
+noremap <silent> <down> :res -5<CR>
+noremap <silent> <left> :vertical resize-5<CR>
+noremap <silent> <right> :vertical resize+5<CR>
 
 " Place the two screens up and down
 noremap <LEADER><LEADER>h <C-w>t<C-w>K
@@ -330,33 +330,53 @@ func! CompileRunGcc()
 endfunc
 
 "auto upload file to server
-command! -nargs=1 StartAsync
-         \ call jobstart(<f-args>, {
-         \    'on_exit': { j,d,e ->
-         \       execute('echom "command finished with exit status '.d.'"', '')
-         \    }
-         \ })
+function! s:ScpEvent(job_id, data, event) dict
+    if a:event == 'exit'
+        if a:data == 1
+          :CreateDirViaSsh ssh -p $ssh_port $ssh_usr_name@$ssh_ip_address mkdir -p $path_remote_dir 
+      else
+          :echom 'uploaded to server: ' . $ssh_usr_name . '@' . $ssh_ip_address
+      endif
+    endif
+endfunction
+
+function! s:SshEvent(job_id, data, event) dict
+    if a:event == 'exit'
+        if a:data == 1
+            :echom 'dir creating failed; check network connection'
+        else
+            :UploadViaScp scp -P $ssh_port $path_local_file $ssh_usr_name@$ssh_ip_address:$path_remote_file
+        endif
+    endif
+endfunction
+
+command! -nargs=1 UploadViaScp
+         \ call jobstart(<f-args>, {'on_exit': function('s:ScpEvent')})
+
+command! -nargs=1 CreateDirViaSsh
+         \ call jobstart(<f-args>, {'on_exit': function('s:SshEvent')})
+
 
 autocmd BufWritePost *.py,*.sh call AutoUploading()
 func! AutoUploading()
-    if exists('g:ssh_usr')
-        let $ssh_usr_name=g:ssh_usr
-        let $ssh_ip_address=g:ssh_ip
+    if exists('b:ssh_usr')
+        let $ssh_usr_name=b:ssh_usr
+        let $ssh_ip_address=b:ssh_ip
         let $path_local_file=expand('%:p')
-        if g:remote_os == "linux"
+        let $ssh_port=b:ssh_port
+        if b:remote_os == "linux"
             let $path_in_projects=join(split($path_local_file, "/")[3:], "/")
-            let $path_remote_dir=g:remote_dir . join(split(expand('%:p:h'), "/")[3:], "/")
+            let $path_remote_dir=b:remote_dir . join(split(expand('%:p:h'), "/")[3:], "/")
         endif
-        if g:remote_os == "win"
+        if b:remote_os == "win"
             let $path_in_projects=join(split($path_local_file, "/")[3:], "\\")
-            let $path_remote_dir=g:remote_dir . join(split(expand('%:p:h'), "/")[3:], "\\")
+            let $path_remote_dir=b:remote_dir . join(split(expand('%:p:h'), "/")[3:], "\\")
         endif
 
-        let $path_remote_file=g:remote_dir . $path_in_projects
+        let $path_remote_file=b:remote_dir . $path_in_projects
         let $project_name=split(expand('%:p'), "/")[3]
 
-        :StartAsync ssh $ssh_usr_name@$ssh_ip_address mkdir -p $path_remote_dir
-        :StartAsync scp $path_local_file $ssh_usr_name@$ssh_ip_address:$path_remote_file
+        :UploadViaScp scp -P $ssh_port $path_local_file $ssh_usr_name@$ssh_ip_address:$path_remote_file
     endif
 endfunc
 
@@ -508,10 +528,9 @@ Plug 'instant-markdown/vim-instant-markdown'
 " Auto Complete
 Plug 'neoclide/coc.nvim', {'branch': 'release'}
 
-" auto sync
-Plug 'kenn7/vim-arsync'
-
-
+" pug
+Plug 'digitaltoad/vim-pug'
+Plug 'wavded/vim-stylus'
 call plug#end()
 
 " ===
@@ -619,7 +638,7 @@ function CondaEnvName()
 endfunction
 
 " undotree
-nnoremap <F5> :UndotreeToggle<CR>
+nnoremap <F6> :UndotreeToggle<CR>
 
 " semshi
 " Mark selected nodes (those with the same name and scope as the one under the cursor). Set to 2 to highlight the node currently under the cursor, too.
@@ -638,7 +657,7 @@ function MyCustomHighlights()
     hi semshiFree             guifg=#ffafd7
     hi semshiBuiltin          guifg=#c678dd
     hi semshiAttribute        guifg=#61afef
-    hi semshiSelf             guifg=#e5c07b
+    hi semshiSelf             guifg=#e06c75
     hi semshiUnresolved       guifg=#e06c75  gui=underline,italic
     hi semshiSelected         guifg=None guibg=#4c525c  
 
@@ -688,7 +707,6 @@ let g:Lf_PopupPalette = {
     \              },
     \      },
     \  }
-nnoremap <c-p> :Leaderf file<CR>
 let g:Lf_UseMemoryCache = 0
 let g:Lf_UseCache = 0
 
@@ -735,11 +753,11 @@ let g:python_pep8_indent_multiline_string=-2
 " do not Map <C-h> to delete brackets, quotes in pair
 let g:AutoPairsMapCh = 0
 " fly mode
-let g:AutoPairsFlyMode = 1
-let g:AutoPairsShortcutFastWrap = '<M-w>'
+let g:AutoPairsShortcutFastWrap = '<C-w>'
 " delete autopair of "" in vim file because it is used for commentation
 " add auto pair of <> in vim file
-au Filetype vim let b:AutoPairs = {'(':')', '[':']', '{':'}',"'":"'", "<":">"}
+au Filetype vim let b:Autopairs = {'(':')', '[':']', '{':'}',"'":"'", "<":">"}
+au Filetype python let b:AutoPairs = {'(':')', '[':']', '{':'}',"'":"'",'"':'"', '```':'```', '"""':'"""', "'''":"'''", "`":"`", "b'":"'", "f'":"'", "r'":"'"}
 
 " tcomment
 let g:tcomment_textobject_inlinecomment = ''
@@ -804,6 +822,10 @@ let g:vista#renderer#icons = {
 \   "function": "",
 \   "variable": "",
 \  }
+" fzf
+" command! -bang -nargs=* Rg call fzf#vim#grep('rg --line-number --no-heading '.shellescape(<q-args>), 0, <bang>0)
+nnoremap <C-p> :Files<CR>
+nnoremap <C-y> :Rg<CR>
 
 " pyrhon conda env
 let g:conda_startup_wrn_suppress = 1
@@ -823,10 +845,42 @@ let g:vimspector_enable_mappings = 'HUMAN'
 
 " wildfire
 let g:wildfire_objects = ["i'", 'i"', "i)", "i]", "i}", "ip", "it", "i>", "iP"]
-nmap <BS> <Plug>(wildfire-quick-select)
+" nmap <BS> <Plug>(wildfire-quick-select)
 
 " vim-sandwich
 runtime macros/sandwich/keymap/surround.vim
+" let g:sandwich#magicchar#f#patterns = [
+" \   {
+" \     'header' : '\<\%(\h\k*\.\)*\h\k*',
+" \     'bra'    : '(',
+" \     'ket'    : ')',
+" \     'footer' : '',
+" \   },
+" \ ]
+augroup sandwich-ft-python
+  autocmd!
+  autocmd Filetype python let b:sandwich_magicchar_f_patterns = [
+  \   {
+  \     'header' : '\<\%(\h\k*\.\)*\h\k*',
+  \     'bra'    : '(',
+  \     'ket'    : ')',
+  \     'footer' : '',
+  \   },
+  \   {
+  \     'header' : '\<\%(\h\k*\.\)*\h\k*',
+  \     'bra'    : '\[',
+  \     'ket'    : '\]',
+  \     'footer' : '',
+  \   },
+  \   {
+  \     'header' : '\<\h\k*\[.\{-}\]',
+  \     'bra'    : '(',
+  \     'ket'    : ')',
+  \     'footer' : '',
+  \   },
+  \ ]
+augroup END
+
 
 " vim-visual-multi
 let g:VM_maps                       = {}
@@ -946,6 +1000,7 @@ let g:coc_global_extensions = [
 		\ 'coc-pyright',
         \ 'coc-snippets',
         \ 'coc-yank',
+        \ 'coc-explorer',
         \]
 
 function! LinterStatus() abort
@@ -1018,7 +1073,7 @@ nmap <silent> gy <Plug>(coc-type-definition)
 nmap <silent> gi <Plug>(coc-implementation)
 nmap <silent> gr <Plug>(coc-references)
 " show the explorer
-nmap tt :CocCommand explorer<CR>
+nmap <silent> tt :CocCommand explorer<CR>
 " Symbol renaming.
 nmap <leader>rn <Plug>(coc-rename)
 " Use it to show documentation in preview window.
