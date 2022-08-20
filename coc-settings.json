@@ -65,6 +65,7 @@
 
     // coc-pyright
     "python.formatting.provider": "yapf",
+    "python.formatting.yapfPath": "/Users/drizzle/opt/anaconda3/envs/research/bin/yapf",
     "python.formatting.yapfArgs": [
         "--style",
         "{spaces_before_comment: 1, column_limit: 120, split_before_named_assigns: False, split_all_comma_separated_values: False, split_arguments_when_comma_terminated: True}"

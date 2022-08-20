@@ -7,18 +7,6 @@ if empty(glob('~/.config/nvim/autoload/plug.vim'))
 	autocmd VimEnter * PlugInstall --sync | source $MYVIMRC
 endif
 
-
-" ===
-" === Create a _machine_specific.vim file to adjust machine specific stuff, like python interpreter location
-" ===
-let has_machine_specific_file = 1
-if empty(glob('~/.config/nvim/_machine_specific.vim'))
-	let has_machine_specific_file = 0
-	silent! exec "!cp ~/.config/nvim/default_configs/_machine_specific_default.vim ~/.config/nvim/_machine_specific.vim"
-endif
-source ~/.config/nvim/_machine_specific.vim
-
-
 " ====================
 " === Editor Setup ==
 " ====================
@@ -140,6 +128,19 @@ vnoremap <LEADER><LEADER>tt :s/    /\t/g
 " Folding
 noremap <silent> <LEADER><LEADER>f za
 
+vnoremap p "0p
+vnoremap P "0P
+vnoremap y "0y
+vnoremap d "0d
+vnoremap c "0c
+nnoremap yy "0yy
+nnoremap p "0p
+nnoremap P "0P
+nnoremap dd "0dd
+nnoremap c "0c
+nnoremap d "0d
+
+
 
 
 " ===
@@ -204,13 +205,13 @@ noremap <silent> <down> :res -5<CR>
 noremap <silent> <left> :vertical resize-5<CR>
 noremap <silent> <right> :vertical resize+5<CR>
 
-" Place the two screens up and down
-noremap <LEADER><LEADER>h <C-w>t<C-w>K
-" Place the two screens side by side
-noremap <LEADER><LEADER>v <C-w>t<C-w>H
+" " Place the two screens up and down
+" noremap <LEADER><LEADER>h <C-w>t<C-w>K
+" " Place the two screens side by side
+" noremap <LEADER><LEADER>v <C-w>t<C-w>H
 
-" Press <SPACE> + q to close the window below the current window
-noremap <LEADER><LEADER>q <C-w>j:q<CR>
+" " Press <SPACE> + q to close the window below the current window
+" noremap <LEADER><LEADER>q <C-w>j:q<CR>
 
 
 " highlight cursorline only in current window
@@ -282,7 +283,7 @@ autocmd BufEnter * silent! lcd %:p:h
 noremap tx :r !figlet
 
 " Opening a terminal window
-noremap <LEADER>/ :set splitbelow<CR>:split<CR>:res -10<CR>:term<CR>
+" noremap <LEADER>/ :set splitbelow<CR>:split<CR>:res -10<CR>:term<CR>
 
 " Compile function
 noremap r :call CompileRunGcc()<CR>
@@ -333,50 +334,40 @@ endfunc
 function! s:ScpEvent(job_id, data, event) dict
     if a:event == 'exit'
         if a:data == 1
-          :CreateDirViaSsh ssh -p $ssh_port $ssh_usr_name@$ssh_ip_address mkdir -p $path_remote_dir 
+          :echom 'Failed to upload to server, due to network or no corresponding directory'
       else
           :echom 'uploaded to server: ' . $ssh_usr_name . '@' . $ssh_ip_address
       endif
     endif
 endfunction
 
-function! s:SshEvent(job_id, data, event) dict
-    if a:event == 'exit'
-        if a:data == 1
-            :echom 'dir creating failed; check network connection'
-        else
-            :UploadViaScp scp -P $ssh_port $path_local_file $ssh_usr_name@$ssh_ip_address:$path_remote_file
-        endif
-    endif
-endfunction
-
 command! -nargs=1 UploadViaScp
          \ call jobstart(<f-args>, {'on_exit': function('s:ScpEvent')})
 
-command! -nargs=1 CreateDirViaSsh
-         \ call jobstart(<f-args>, {'on_exit': function('s:SshEvent')})
 
-
-autocmd BufWritePost *.py,*.sh call AutoUploading()
+autocmd BufWritePost *.py,*.sh,*.cfg,*.yml call AutoUploading()
 func! AutoUploading()
     if exists('b:ssh_usr')
-        let $ssh_usr_name=b:ssh_usr
-        let $ssh_ip_address=b:ssh_ip
-        let $path_local_file=expand('%:p')
-        let $ssh_port=b:ssh_port
-        if b:remote_os == "linux"
-            let $path_in_projects=join(split($path_local_file, "/")[3:], "/")
-            let $path_remote_dir=b:remote_dir . join(split(expand('%:p:h'), "/")[3:], "/")
-        endif
-        if b:remote_os == "win"
-            let $path_in_projects=join(split($path_local_file, "/")[3:], "\\")
-            let $path_remote_dir=b:remote_dir . join(split(expand('%:p:h'), "/")[3:], "\\")
-        endif
+        let idxs = range(0, len(b:ssh_usr) - 1)
+        for i in idxs
+            let $ssh_usr_name=b:ssh_usr[i]
+            let $ssh_ip_address=b:ssh_ip[i]
+            let $path_local_file=expand('%:p')
+            let $ssh_port=b:ssh_port[i]
+            if b:remote_os[i] == "linux"
+                let $path_in_projects=join(split($path_local_file, "/")[3:], "/")
+                let $path_remote_dir=b:remote_dir[i] . join(split(expand('%:p:h'), "/")[3:], "/")
+            endif
+            if b:remote_os[i] == "win"
+                let $path_in_projects=join(split($path_local_file, "/")[3:], "\\")
+                let $path_remote_dir=b:remote_dir[i] . join(split(expand('%:p:h'), "/")[3:], "\\")
+            endif
 
-        let $path_remote_file=b:remote_dir . $path_in_projects
-        let $project_name=split(expand('%:p'), "/")[3]
+            let $path_remote_file=b:remote_dir[i] . $path_in_projects
+            let $project_name=split(expand('%:p'), "/")[3]
 
-        :UploadViaScp scp -P $ssh_port $path_local_file $ssh_usr_name@$ssh_ip_address:$path_remote_file
+            :UploadViaScp scp -o ConnectTimeout=3 -P $ssh_port $path_local_file $ssh_usr_name@$ssh_ip_address:$path_remote_file
+        endfor
     endif
 endfunc
 
@@ -638,7 +629,7 @@ function CondaEnvName()
 endfunction
 
 " undotree
-nnoremap <F6> :UndotreeToggle<CR>
+nnoremap <leader>ud :UndotreeToggle<CR>
 
 " semshi
 " Mark selected nodes (those with the same name and scope as the one under the cursor). Set to 2 to highlight the node currently under the cursor, too.
@@ -1002,6 +993,7 @@ let g:coc_global_extensions = [
         \ 'coc-yank',
         \ 'coc-explorer',
         \]
+let g:python3_host_prog = '/Users/drizzle/opt/anaconda3/envs/research/bin/python'
 
 function! LinterStatus() abort
   let info = get(b:, 'coc_diagnostic_info', {})
@@ -1125,8 +1117,11 @@ nnoremap <silent> <space>y  :<C-u>CocList -A --normal yank<cr>
 " ===
 exec "nohlsearch"
 
-" Open the _machine_specific.vim file if it has just been created
-if has_machine_specific_file == 0
-	exec "e ~/.config/nvim/_machine_specific.vim"
-endif
-
+vnoremap <silent> <leader>/ :s/nan/\/<cr>
+vnoremap <silent> <leader>n :s/nan/n/<cr>
+vnoremap <silent> <leader>y :s/nan/y/<cr>
+vnoremap <silent> <leader>au :s/nan/a/<cr>
+nnoremap <silent> <leader>y V:s/nan/y/<cr>
+nnoremap <silent> <leader>n V:s/nan/n/<cr>
+nnoremap <silent> <leader>/ V:s/nan/\//<cr>
+nnoremap <silent> <leader>au V:s/nan/auxiliary_examination/<cr>
