@@ -74,6 +74,8 @@
     // snippets
     "snippets.ultisnips.directories": [
         "~/.config/nvim/UltiSnips"
-    ]
+    ],
+
+    "suggest.noselect": true
 
 }
