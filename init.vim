@@ -333,11 +333,11 @@ endfunc
 "auto upload file to server
 function! s:ScpEvent(job_id, data, event) dict
     if a:event == 'exit'
-        if a:data == 1
-          :echom 'Failed to upload to server, due to network or no corresponding directory'
-      else
+        if a:data == 0
           :echom 'uploaded to server: ' . $ssh_usr_name . '@' . $ssh_ip_address
-      endif
+        else
+          :echom 'Failed to upload to server, due to network or no corresponding directory'
+        endif
     endif
 endfunction
 
@@ -354,17 +354,8 @@ func! AutoUploading()
             let $ssh_ip_address=b:ssh_ip[i]
             let $path_local_file=expand('%:p')
             let $ssh_port=b:ssh_port[i]
-            if b:remote_os[i] == "linux"
-                let $path_in_projects=join(split($path_local_file, "/")[3:], "/")
-                let $path_remote_dir=b:remote_dir[i] . join(split(expand('%:p:h'), "/")[3:], "/")
-            endif
-            if b:remote_os[i] == "win"
-                let $path_in_projects=join(split($path_local_file, "/")[3:], "\\")
-                let $path_remote_dir=b:remote_dir[i] . join(split(expand('%:p:h'), "/")[3:], "\\")
-            endif
-
+            let $path_in_projects=join(split($path_local_file, "/")[3:], "/")
             let $path_remote_file=b:remote_dir[i] . $path_in_projects
-            let $project_name=split(expand('%:p'), "/")[3]
 
             :UploadViaScp scp -o ConnectTimeout=3 -P $ssh_port $path_local_file $ssh_usr_name@$ssh_ip_address:$path_remote_file
         endfor
@@ -1039,21 +1030,25 @@ imap <M-j> <Plug>(coc-snippets-expand-jump)
 " Use <leader>x for convert visual selected code to snippet
 xmap <leader>x  <Plug>(coc-convert-snippet)
 
-
 " use <tab> for trigger completion with characters ahead and navigate
+inoremap <silent><expr> <CR> coc#pum#visible() ? coc#pum#confirm() : "\<C-g>u\<CR>\<c-r>=coc#on_enter()\<CR>"
+inoremap <silent><expr> <C-x><C-z> coc#pum#visible() ? coc#pum#stop() : "\<C-x>\<C-z>"
+" remap for complete to use tab and <cr>
 inoremap <silent><expr> <TAB>
-	\ pumvisible() ? "\<C-n>" :
-	\ <SID>check_back_space() ? "\<TAB>" :
-	\ coc#refresh()
-" use <Shift-tab> for navigate upwards
-inoremap <expr><S-TAB> pumvisible() ? "\<C-p>" : "\<C-h>"
-" use <Enter> to type selected characters; if no character is selected, use <Enter> to move to the next line
-inoremap <expr> <cr> complete_info()["selected"] != "-1" ? "\<C-y>" : "\<C-g>u\<CR>"
+    \ coc#pum#visible() ? coc#pum#next(1):
+    \ <SID>check_back_space() ? "\<Tab>" :
+    \ coc#refresh()
+inoremap <expr><c-k> coc#pum#visible() ? coc#pum#prev(1) : "\<up>"
+inoremap <expr><c-j> coc#pum#visible() ? coc#pum#next(1) : "\<down>"
+inoremap <silent><expr> <c-space> coc#refresh()
+
+hi CocSearch ctermfg=12 guifg=#18A3FF
+hi CocMenuSel ctermbg=109 guibg=#13354A
 function! s:check_back_space() abort
 	let col = col('.') - 1
 	return !col || getline('.')[col - 1]  =~# '\s'
 endfunction
-inoremap <silent><expr> <c-o> coc#refresh()
+
 " Use them to navigate diagnostics
 " Use `:CocDiagnostics` to get all diagnostics of current buffer in location list.
 nmap <silent> <LEADER>- <Plug>(coc-diagnostic-prev)
