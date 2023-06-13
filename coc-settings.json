@@ -68,8 +68,14 @@
     "python.formatting.yapfPath": "/Users/drizzle/opt/anaconda3/envs/research/bin/yapf",
     "python.formatting.yapfArgs": [
         "--style",
-        "{spaces_before_comment: 1, column_limit: 120, split_before_named_assigns: False, split_all_comma_separated_values: False, split_arguments_when_comma_terminated: True}"
+        "{spaces_before_comment: 1, column_limit: 120, split_before_named_assigns: False, split_all_comma_separated_values: False, split_arguments_when_comma_terminated: True, blank_line_before_nested_class_or_def: False}"
     ],
+    "pyright.inlayHints.variableTypes": false,
+    "pyright.inlayHints.functionReturnTypes": false,
+    // coc-ruff
+    // line length
+    "ruff.enable": false,
+    "ruff.args": ["--line-length", "120"],
 
     // snippets
     "snippets.ultisnips.directories": [

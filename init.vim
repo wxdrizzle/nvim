@@ -27,6 +27,7 @@ set hidden
 set cursorline
 set colorcolumn=120
 set wrap
+set mouse=
 autocmd BufRead *.py set nowrap
 set showcmd
 set wildmenu
@@ -40,6 +41,7 @@ set tabstop=4
 set shiftwidth=4
 set softtabstop=-1
 set autoindent
+autocmd FileType yaml setlocal ts=4 sts=4 sw=4 expandtab
 set list
 set listchars=tab:\▏\ ,trail:·
 set scrolloff=7
@@ -294,7 +296,8 @@ func! CompileRunGcc()
 	" 	exec "!time ./%<"
 	" elseif &filetype == 'cpp'
 	" 	set splitbelow
-	" 	exec "!g++ -std=c++11 % -Wall -o %<"
+    "     exec "!clang++ % -o %<"
+	" 	" exec "!g++ -std=c++11 % -Wall -o %<"
 	" 	:sp
 	" 	:res -15
 	" 	:term ./%<
@@ -330,25 +333,51 @@ func! CompileRunGcc()
 	endif
 endfunc
 
+
 "auto upload file to server
-function! s:ScpEvent(job_id, data, event) dict
+function! s:ScpEvent(ip, job_id, data, event) dict
     if a:event == 'exit'
         if a:data == 0
-          :echom 'uploaded to server: ' . $ssh_usr_name . '@' . $ssh_ip_address
+            :call add(g:user_ip_success, a:ip)
         else
-          :echom 'Failed to upload to server, due to network or no corresponding directory'
+            :call add(g:user_ip_fail, a:ip)
+        endif
+
+        let g:display_msg = '[Upload] '
+        if len(g:user_ip_success) > 0
+            let g:display_msg = g:display_msg . 'Success: ' . join(g:user_ip_success, ', ')
+            if len(g:user_ip_fail) > 0
+                let g:display_msg = g:display_msg . '; '
+            endif
+        endif
+        if len(g:user_ip_fail) > 0
+            let g:display_msg = g:display_msg . 'Failure: ' . join(g:user_ip_fail, ', ')
+        endif
+        echom g:display_msg
+
+        echo "[Upload] "
+        if len(g:user_ip_success) > 0
+            let g:display_msg = 'Success: ' . join(g:user_ip_success, ', ')
+            if len(g:user_ip_fail) > 0
+                let g:display_msg = g:display_msg . '; '
+            endif
+            echon g:display_msg
+        endif
+        if len(g:user_ip_fail) > 0
+            echohl WarningMsg
+            let g:display_msg = 'Failure: ' . join(g:user_ip_fail, ', ')
+            echon g:display_msg
+            echohl None
         endif
     endif
 endfunction
 
-command! -nargs=1 UploadViaScp
-         \ call jobstart(<f-args>, {'on_exit': function('s:ScpEvent')})
-
-
-autocmd BufWritePost *.py,*.sh,*.cfg,*.yml call AutoUploading()
+autocmd BufWritePost *.py,*.sh,*.cfg,*.yml,*.cpp,*.h call AutoUploading()
 func! AutoUploading()
     if exists('b:ssh_usr')
         let idxs = range(0, len(b:ssh_usr) - 1)
+        let g:user_ip_success = []
+        let g:user_ip_fail = []
         for i in idxs
             let $ssh_usr_name=b:ssh_usr[i]
             let $ssh_ip_address=b:ssh_ip[i]
@@ -357,7 +386,7 @@ func! AutoUploading()
             let $path_in_projects=join(split($path_local_file, "/")[3:], "/")
             let $path_remote_file=b:remote_dir[i] . $path_in_projects
 
-            :UploadViaScp scp -o ConnectTimeout=3 -P $ssh_port $path_local_file $ssh_usr_name@$ssh_ip_address:$path_remote_file
+            call jobstart(['scp', '-o', 'ConnectTimeout=3', '-P', $ssh_port, $path_local_file, $ssh_usr_name.'@'.$ssh_ip_address.':'.$path_remote_file], {'on_exit': function('s:ScpEvent', [$ssh_usr_name.'@'.$ssh_ip_address])})
         endfor
     endif
 endfunc
@@ -513,6 +542,12 @@ Plug 'neoclide/coc.nvim', {'branch': 'release'}
 " pug
 Plug 'digitaltoad/vim-pug'
 Plug 'wavded/vim-stylus'
+
+Plug 'github/copilot.vim'
+
+" Plug 'yaegassy/coc-ruff', {'do': 'yarn install --frozen-lockfile'}
+
+Plug 'skywind3000/vim-keysound'
 call plug#end()
 
 " ===
@@ -1103,6 +1138,11 @@ hi   CocHintSign       guifg=#56b6c2
 hi   CocHintFloat      guifg=#56b6c2
 
 nnoremap <silent> <space>y  :<C-u>CocList -A --normal yank<cr>
+
+" vim-keysound
+" let g:keysound_enable = 1
+" let g:keysound_theme = 'default'
+" let g:keysound_py_version = 3
 
 " ===================== End of Plugin Settings =====================
 
